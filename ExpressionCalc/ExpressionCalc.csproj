@@ -41,10 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Expression.cs" />
+    <Compile Include="Expression\Expression.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="ParseException.cs" />
-    <Compile Include="Parser.cs" />
+    <Compile Include="Parser\ParseException.cs" />
+    <Compile Include="Parser\Parser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
