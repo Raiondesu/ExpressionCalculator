@@ -1,5 +1,5 @@
 # ExpressionCalculator
-A simple extedable parser &amp; calculator of arithmetic expressions, written in C# as an assignment for "Programming Paradigms" course of Innopolis University.
+A simple extendable parser &amp; calculator of arithmetic expressions, written in C# as an assignment for "Programming Paradigms" course of Innopolis University.
 
 ## Usage example
 
@@ -11,11 +11,11 @@ string input = "(2 * (-2) + (128/32) - 6) >= 0 || 1";
 
 try
 {
-  Expression expression = input.Parse();
+	Expression expression = input.Parse();
 }
 catch (Exception e)
 {
-  Console.WriteLine(e);
+	Console.WriteLine(e);
 }
 
 long result = expression.Value;
