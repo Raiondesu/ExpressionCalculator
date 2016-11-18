@@ -15,67 +15,69 @@ namespace ExpressionCalc
 			if (args.Length > 0)
 				input = args[0];
 
+
 			Test(input, false);
 			Test(input);
 
 			#region Tests
 			if (args.Length == 0)
 			{
-				Test("0||2");
-				Test("2 2");
-				Test("(22 + 1)-3*-2 2");
-				Test("()");
-				Test(")");
-				Test("(");
-				Test("");
-				Test("(2+(12/3)");
-				Test("8>=4+(1&&5");
-				Test("12+");
-				Test("+12");
-				Test("9223372036854775807");
-				Test("12*(-9223372036854775807)");
-				long t = -9223372036854775807;
-				Console.WriteLine((12*t).ToString());
-				Test("14112222482725050715397");
-				Test("79228162514264337593543950336");
-				Test("13:32");
-				Test("I am not an expression!");
-				Test("1!");
-				Test("5^\t(-2)");
-				Test("12 + 2 - 5b");
-				Test("12 + 2 - 5\n2");
-				Test("-11");
-				Test("(8 / 0)");
-				Test("( 6 - 10) - ((16/2-1) / (1-12&&2))*((9) - 5)+6");
-				Test("(8 / 1)( 6 - 10)");
-				Test("(8 / 1)*( 6 - 10)   ((9) - 5)");
-				Test("(8 / 1)*( 6 - 10) - ((9) - 5)6");
-				Test("5*(-2)");
-				Test("5&&(-2)");
-				Test("-5-(-3)");
-				Test("+5-(-3)");
-				Test("5-(-3)");
-				Test("(((((-(-3))))))");
-				Test("-(-(3))");
-				Test("((3))");
-				Test("-");
-				Test("5--3");
-				Test("(22 + 1)-3*-2");
-				Test("(0)-0)");
-				Test("(0)-(0)-");
-				Test("<(1+2)");
-				Test("(1+2)+12-3<=");
-				Test("0+(1<=2)+1");
-				Test("9>=2&&112");
-				Test("4>=8/225||(74)||0");
+//				Test("0||2");
+//				Test("2 2");
+//				Test("(22 + 1)-3*-2 2");
+//				Test("()");
+//				Test(")");
+//				Test("(");
+//				Test("");
+//				Test("(2+(12/3)");
+//				Test("8>=4+(1&&5");
+//				Test("12+");
+//				Test("+12");
+//				Test("9223372036854775807");
+//				Test("12*(-9223372036854775807)");
+//				long t = -9223372036854775807;
+//				Console.WriteLine((12*t).ToString());
+//				Test("14112222482725050715397");
+//				Test("79228162514264337593543950336");
+//				Test("13:32");
+//				Test("I am not an expression!");
+//				Test("1!");
+//				Test("5^\t(-2)");
+//				Test("12 + 2 - 5b");
+//				Test("12 + 2 - 5\n2");
+//				Test("-11");
+//				Test("(8 / 0)");
+//				Test("( 6 - 10) - ((16/2-1) / (1-12&&2))*((9) - 5)+6");
+//				Test("(8 / 1)( 6 - 10)");
+//				Test("(8 / 1)*( 6 - 10)   ((9) - 5)");
+//				Test("(8 / 1)*( 6 - 10) - ((9) - 5)6");
+//				Test("5*(-2)");
+//				Test("5&&(-2)");
+//				Test("-5-(-3)");
+//				Test("+5-(-3)");
+//				Test("5-(-3)");
+//				Test("(((((-(-3))))))");
+//				Test("-(-(3))");
+//				Test("((3))");
+//				Test("-");
+//				Test("5--3");
+//				Test("(22 + 1)-3*-2");
+//				Test("(0)-0)");
+//				Test("(0)-(0)-");
+//				Test("<(1+2)");
+//				Test("(1+2)+12-3<=");
+//				Test("0+(1<=2)+1");
+//				Test("9>=2&&112");
+//				Test("4>=8/225||(74)||0");
 
-				Test(GenerateTests(10), false);
+//				Test(GenerateTests(10), false);
 				Test(GenerateTests(10));
-				Test(GenerateTests(10, 1000, incRel: false, incLog: false, incDiv: false));
-				Test(GenerateTests(10, 15, fullyRandom: true));
+//				Test(GenerateTests(10, 1000, incRel: false, incLog: false, incDiv: false));
+//				Test(GenerateTests(10, 15, fullyRandom: true));
 			}
 			#endregion
 		}
+
 
 		private static void Test(string input, bool skipEmpty = true)
 		{

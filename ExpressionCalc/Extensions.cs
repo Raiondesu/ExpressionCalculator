@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
@@ -38,8 +39,12 @@ namespace ExpressionCalc
 				.OrderByDescending(e => e.Length).ToArray();
 
 		public static string GetLast(this string source, int tailLength = 5)
-		{
-			return tailLength >= source.Length ? source : source.Substring(source.Length - tailLength);
-		}
+			=> tailLength >= source.Length ? source : source.Substring(source.Length - tailLength);
+
+		public static IEnumerable<Type> GetAllSubclasses(this Type parent)
+			=> from a in AppDomain.CurrentDomain.GetAssemblies()
+				from t in a.GetTypes()
+				where t.IsSubclassOf(parent)
+				select t;
 	}
 }

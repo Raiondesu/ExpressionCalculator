@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace ExpressionCalc
@@ -14,14 +16,15 @@ namespace ExpressionCalc
 			return ParseLogical(Regex.Replace(input, "\\s+", ""));
 		}
 
-		private static string[] ParseString(string input, string[] opcodes, Type type)
+		private static Expression ParseExpression(string input, Type T, Func<string, Expression> nextParse)
 		{
-			string left = input, right = null, opcode = null;
+			string[] opcodes = T.GetProperty("AllOpCodes").GetValue(null) as string[] ?? new string[]{};
+			string leftStr = input, rightStr = null, opCode = null;
 
-			if (type == typeof(Term) && opcodes.Any(input.StartsWith)) left = $"0{left}";
+			if (T == typeof(Term) && opcodes.Any(input.StartsWith)) leftStr = $"0{leftStr}";
 			else if (opcodes.Any(input.Contains))
 			{
-				for (int bracesAmount = 0, i = input.Length - 1; i >= 0 && opcode == null && bracesAmount >= 0; i--)
+				for (int bracesAmount = 0, i = input.Length - 1; i >= 0 && opCode == null && bracesAmount >= 0; i--)
 				{
 					if (input[i] == ')')
 						bracesAmount++;
@@ -33,42 +36,35 @@ namespace ExpressionCalc
 							if (c.Length + i - 1 >= input.Length) continue;
 							string code = input.Substring(i, c.Length);
 							if (code != c) continue;
-							opcode = c;
-							left = input.Substring(0, i);
-							right = input.Substring(i + c.Length);
-							if (left.Length == 0)
-								throw new SyntaxException(input, typeof(Primary), "Left part of an expression is empty!");
-							if (right.Length == 0)
-								throw new SyntaxException(input, typeof(Primary), "Right part of an expression is empty!");
+							opCode = c;
+							leftStr = input.Substring(0, i);
+							rightStr = input.Substring(i + c.Length);
+							if (leftStr.Length == 0)
+								throw new SyntaxException(input, typeof(Unary), "Left part of an expression is empty!");
+							if (rightStr.Length == 0)
+								throw new SyntaxException(input, typeof(Unary), "Right part of an expression is empty!");
 							break;
 						}
 				}
 			}
-			return new[] {left, opcode, right};
-		}
+			Expression left = nextParse(leftStr);
+			Expression right = rightStr == null ? null : nextParse(rightStr);
 
-		private static T ParseExpression<T>(string input, string[] opcodes, Func<string, Expression> nextParse) where T : Expression
-		{
-			string[] parsed = ParseString(input, opcodes, typeof(T));
-			Expression left = nextParse(parsed[0]);
-			var opCode = parsed[1];
-			Expression right = parsed[2] == null ? null : nextParse(parsed[2]);
-
-			return typeof(T).GetConstructor(new[] {typeof(Expression), typeof(string), typeof(Expression)})?
-				.Invoke(new object[] {left, opCode, right}) as T;
+			return T.GetConstructor(new[] {typeof(Expression), typeof(string), typeof(Expression)})?
+				.Invoke(new object[] {left, opCode, right}) as Expression;
 		}
 
 		private static Expression ParseLogical(string input)
-			=> ParseExpression<Logical>(input, Logical.AllOpCodes, ParseRelation);
+			=> ParseExpression(input, typeof(Logical), ParseRelation);
 
 		private static Expression ParseRelation(string input)
-			=> ParseExpression<Relation>(input, Relation.AllOpCodes, ParseTerm);
+			=> ParseExpression(input, typeof(Relation), ParseTerm);
 
 		private static Expression ParseTerm(string input)
-			=> ParseExpression<Term>(input, Term.AllOpCodes, ParseFactor);
+			=> ParseExpression(input, typeof(Term), ParseFactor);
 
 		private static Expression ParseFactor(string input)
-			=> ParseExpression<Factor>(input, Factor.AllOpCodes, ParsePrimary);
+			=> ParseExpression(input, typeof(Factor), ParsePrimary);
 
 		private static Expression ParsePrimary(string input)
 		{
@@ -87,14 +83,14 @@ namespace ExpressionCalc
 				if (!wrapped) continue;
 
 				if (bracesAmount != 0)
-					throw new BracesException(input, typeof(Primary));
+					throw new BracesException(input, typeof(Unary));
 				if (input.Length >= 2)
 				{
 					input = input.Substring(1, input.Length - 2);
 					parenthesized = true;
 				}
 				else if (input.Length == 0)
-					throw new SyntaxException(input, typeof(Primary), "Part of an expression is empty!");
+					throw new SyntaxException(input, typeof(Unary), "Part of an expression is empty!");
 				if (Integer.CheckBounds(input))
 					return parenthesized ? ParseParenthesized(input) : new Integer(long.Parse(input));
 			}
@@ -104,9 +100,9 @@ namespace ExpressionCalc
 			var r = Regex.Match(input, "((.?){3}(\\)[(0-9])(.?){3}|(.?){3}([0-9)]\\()(.?){3})").Value
 			        + Regex.Match(s, "[^0-9()]+").Value;
 			if (r.Length > 0)
-				throw new OperatorException(r, typeof(Primary));
+				throw new OperatorException(r, typeof(Unary));
 			if (bracesAmount != 0)
-				throw new BracesException(input, typeof(Primary));
+				throw new BracesException(input, typeof(Unary));
 
 			if (Integer.CheckBounds(input))
 				return parenthesized ? ParseParenthesized(input) : new Integer(long.Parse(input));

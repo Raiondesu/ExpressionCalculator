@@ -6,10 +6,26 @@ namespace ExpressionCalc
 	{
 		public abstract long Value { get; }
 
-		public virtual Expression Left { get; }
-		public virtual Expression Right { get; }
+		public abstract string ToJson(bool skipEmpty = false, uint level = 0);
+	}
 
-		protected virtual string ToJson(string opCode, bool skipEmpty, uint level)
+	public abstract class Binary : Expression
+	{
+		protected Binary(Expression left, Expression right = null)
+		{
+			Left = left;
+			Right = right;
+		}
+
+		public enum OpCodeType{}
+
+		public static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
+
+		public abstract string OpCode { get; }
+		public Expression Left { get; }
+		public Expression Right { get; }
+
+		public override string ToJson(bool skipEmpty = false, uint level = 0)
 		{
 			if (skipEmpty && Right == null && Left != null)
 				return Left.ToJson(true, level);
@@ -22,74 +38,69 @@ namespace ExpressionCalc
 			string left = Left?.ToJson(skipEmpty, level + 1);
 			string right = Right?.ToJson(skipEmpty, level + 1);
 			string value = this.Value.ToString();
+			string opCode = (OpCode == null ? "" : ",\n" + tabs + "    \"opcode\": \"" + OpCode + "\"");
 
 			left   = (left == null ? "" : ",\n" + tabs + "    \"left\": " + left);
-			opCode = (opCode == null ? "" : ",\n" + tabs + "    \"opcode\": \"" + opCode + "\"");
 			right  = (right == null  ? "" : ",\n" + tabs + "    \"right\": " + right);
 			value = ",\n" + tabs + "    \"value\": " + value;
-
 
 			return "{\n"+tabs+type+left+opCode+right+value+"\n"+tabs+"}";
 		}
 
-		public virtual string ToJson(bool skipEmpty = false, uint level = 0) => this.ToJson(null, skipEmpty, level);
+		public new virtual string ToString() => Left + (OpCode ?? "") + (Right?.ToString() ?? "");
 	}
 
-	public class Logical : Expression
+	public class Logical : Binary
 	{
 		public Logical(Expression left, string opCode = null, Expression right = null)
+			: base(left, right)
 		{
-			OpCode = opCode?.ToEnum<OpCodeType>();
-			Left = left;
-			Right = right;
+			this.OperationCode = opCode?.ToEnum<OpCodeType>();
 		}
 
-		public enum OpCodeType
+		public new enum OpCodeType
 		{
-			[Description("&&")]
+			[Description("and")]
 			and,
-			[Description("||")]
+			[Description("or")]
 			or,
-			[Description("^")]
+			[Description("xor")]
 			xor
 		}
 
-		public static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
+		public new static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
 
-		public OpCodeType? OpCode { get; protected set; }
-		public override Expression Left { get; }
-		public override Expression Right { get; }
+		private OpCodeType? OperationCode { get; }
+		public override string OpCode => OperationCode?.Description();
 
 		public override long Value
 		{
 			get
 			{
-				if (this.OpCode == OpCodeType.and)
-					return (Left.Value > 0) & ((Right?.Value ?? 1) > 0) ? 1 : 0;
-				if (this.OpCode == OpCodeType.or)
-					return (Left.Value > 0) | ((Right?.Value ?? 1) > 0) ? 1 : 0;
-				if (this.OpCode == OpCodeType.xor)
-					return (Left.Value > 0) ^ ((Right?.Value ?? 1) > 0) ? 1 : 0;
-				return Left.Value;
+				switch (this.OperationCode)
+				{
+					case OpCodeType.and:
+						return (Left.Value > 0) & ((Right?.Value ?? 1) > 0) ? 1 : 0;
+					case OpCodeType.or:
+						return (Left.Value > 0) | ((Right?.Value ?? 1) > 0) ? 1 : 0;
+					case OpCodeType.xor:
+						return (Left.Value > 0) ^ ((Right?.Value ?? 1) > 0) ? 1 : 0;
+					default:
+						return Left.Value;
+				}
 			}
 		}
-
-		public override string ToJson(bool skipEmpty = false, uint level = 0)
-			=> this.ToJson(OpCode?.Description(), skipEmpty, level);
-
-		public override string ToString() => Left + (OpCode?.Description() ?? "") + (Right?.ToString() ?? "");
 	}
 
-	public class Relation : Expression
+	public class Relation : Binary
 	{
 		public Relation(Expression left, string opCode = null, Expression right = null)
+			: base(left, right)
 		{
-			OpCode = opCode?.ToEnum<OpCodeType>();
-			Left = left;
-			Right = right;
+			OperationCode = opCode?.ToEnum<OpCodeType>();
 		}
 
-		public enum OpCodeType
+		public new enum OpCodeType
 		{
 			[Description("<=")]
 			LessEqual,
@@ -105,48 +116,45 @@ namespace ExpressionCalc
 			Bigger
 		}
 
-		public static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
+		public new static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
 
-		public OpCodeType? OpCode { get; protected set; }
-		public override Expression Left { get; }
-		public override Expression Right { get; }
+		private OpCodeType? OperationCode { get; }
+		public override string OpCode => OperationCode?.Description();
 
 		public override long Value
 		{
 			get
 			{
-				if (OpCode == OpCodeType.Bigger)
-					return Left.Value > (Right?.Value ?? 0) ? 1 : 0;
-				if (OpCode == OpCodeType.BiggerEqual)
-					return Left.Value >= (Right?.Value ?? 0) ? 1 : 0;
-				if (OpCode == OpCodeType.Less)
-					return Left.Value < (Right?.Value ?? 0) ? 1 : 0;
-				if (OpCode == OpCodeType.LessEqual)
-					return Left.Value <= (Right?.Value ?? 0) ? 1 : 0;
-				if (OpCode == OpCodeType.Equal)
-					return Left.Value == (Right?.Value ?? 0) ? 1 : 0;
-				if (OpCode == OpCodeType.NotEqual)
-					return Left.Value != (Right?.Value ?? 0) ? 1 : 0;
-				return Left.Value;
+				switch (OperationCode)
+				{
+					case OpCodeType.Bigger:
+						return Left.Value > (Right?.Value ?? 0) ? 1 : 0;
+					case OpCodeType.BiggerEqual:
+						return Left.Value >= (Right?.Value ?? 0) ? 1 : 0;
+					case OpCodeType.Less:
+						return Left.Value < (Right?.Value ?? 0) ? 1 : 0;
+					case OpCodeType.LessEqual:
+						return Left.Value <= (Right?.Value ?? 0) ? 1 : 0;
+					case OpCodeType.Equal:
+						return Left.Value == (Right?.Value ?? 0) ? 1 : 0;
+					case OpCodeType.NotEqual:
+						return Left.Value != (Right?.Value ?? 0) ? 1 : 0;
+					default:
+						return Left.Value;
+				}
 			}
 		}
-
-		public override string ToJson(bool skipEmpty = false, uint level = 0)
-			=> this.ToJson(OpCode?.Description(), skipEmpty, level);
-
-		public override string ToString() => Left + (OpCode?.Description() ?? "") + (Right?.ToString() ?? "");
 	}
 
-	public class Term : Expression
+	public class Term : Binary
 	{
 		public Term(Expression left, string opCode = null, Expression right = null)
+			: base(left, right)
 		{
-			OpCode = opCode?.ToEnum<OpCodeType>();
-			Left = left;
-			Right = right;
+			OperationCode = opCode?.ToEnum<OpCodeType>();
 		}
 
-		public enum OpCodeType
+		public new enum OpCodeType
 		{
 			[Description("+")]
 			Plus,
@@ -154,83 +162,101 @@ namespace ExpressionCalc
 			Minus
 		}
 
-		public static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
+		public new static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
 
-		public OpCodeType? OpCode { get; }
-		public override Expression Left { get; }
-		public override Expression Right { get; }
+		private OpCodeType? OperationCode { get; }
+		public override string OpCode => OperationCode?.Description();
 
 		public override long Value
 		{
 			get
 			{
-				if (OpCode == OpCodeType.Minus)
-					return Left.Value - (Right?.Value ?? 0);
-				if (OpCode == OpCodeType.Plus)
-					return Left.Value + (Right?.Value ?? 0);
-				return Left.Value;
+				switch (OperationCode)
+				{
+					case OpCodeType.Minus:
+						return Left.Value - (Right?.Value ?? 0);
+					case OpCodeType.Plus:
+						return Left.Value + (Right?.Value ?? 0);
+					default:
+						return Left.Value;
+				}
 			}
 		}
-
-		public override string ToJson(bool skipEmpty = false, uint level = 0)
-			=> this.ToJson(OpCode?.Description(), skipEmpty, level);
-
-		public override string ToString() => Left + (OpCode?.Description() ?? "") + (Right?.ToString() ?? "");
 	}
 
-	public class Factor : Expression
+	public class Factor : Binary
 	{
 		public Factor(Expression left, string opCode = null, Expression right = null)
+			: base(left, right)
 		{
-			OpCode = opCode?.ToEnum<OpCodeType>();
-			Left = left;
-			Right = right;
+			OperationCode = opCode?.ToEnum<OpCodeType>();
 		}
 
-		public enum OpCodeType
+		public new enum OpCodeType
 		{
 			[Description("*")]
 			Product,
 			[Description("/")]
-			Division
+			Division,
+			[Description("%")]
+			Modulo
 		}
 
-		public static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
+		public new static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
 
-		public OpCodeType? OpCode { get; }
-		public override Expression Left { get; }
-		public override Expression Right { get; }
+		private OpCodeType? OperationCode { get; }
+		public override string OpCode => OperationCode?.Description();
 
 		public override long Value
 		{
 			get
 			{
-				if (OpCode == OpCodeType.Division)
+				switch (OperationCode)
 				{
-					if (Right?.Value == 0)
-						throw new CalculationException(Left.ToString().GetLast() + "/" + Right, this.GetType(), "Division by 0!");
-					return Left.Value / (Right?.Value ?? 1);
+					case OpCodeType.Division:
+						if (Right?.Value == 0)
+							throw new CalculationException(Left.ToString().GetLast() + "/" + Right, this.GetType(), "Division by 0!");
+						return Left.Value / (Right?.Value ?? 1);
+					case OpCodeType.Product:
+						return Left.Value * (Right?.Value ?? 1);
+					default:
+						return Left.Value;
 				}
-				if (OpCode == OpCodeType.Product)
-					return Left.Value * (Right?.Value ?? 1);
-				return Left.Value;
 			}
 		}
-
-		public override string ToJson(bool skipEmpty = false, uint level = 0)
-			=> this.ToJson(OpCode?.Description(), skipEmpty, level);
-
-		public override string ToString() => Left + (OpCode?.Description() ?? "") + (Right?.ToString() ?? "");
 	}
 
-	public abstract class Primary : Expression {}
+	public abstract class Unary : Expression
+	{
+		public abstract Expression Expression { get; }
 
-	public class Integer : Primary
+		public override string ToJson(bool skipEmpty = false, uint level = 0)
+		{
+			string tabs = "";
+			for (int i = 0; i < level; i++)
+				tabs += "    ";
+
+			string type = "    \"type\": \"" + this.GetType().Name + "\"";
+			string expression = Expression?.ToJson(skipEmpty, level + 1);
+			string value = this.Value.ToString();
+
+			expression   = (expression == null ? "" : ",\n" + tabs + "    \"expression\": " + expression);
+			value = ",\n" + tabs + "    \"value\": " + value;
+
+			return "{\n"+tabs+type+expression+value+"\n"+tabs+"}";
+		}
+
+		public new virtual string ToString() => this.Expression.ToString();
+	}
+
+	public sealed class Integer : Unary
 	{
 		public Integer(long value)
 		{
 			this.Value = value;
 		}
+
+		public override long Value { get; }
 
 		public static bool CheckBounds(string input)
 		{
@@ -241,44 +267,20 @@ namespace ExpressionCalc
 			return false;
 		}
 
-		public override long Value { get; }
-
-		public override string ToJson(bool skipEmpty = false, uint level = 0)
-			=> this.ToJson(null, skipEmpty, level);
-
+		public override Expression Expression { get; }
 		public override string ToString() => Value.ToString();
 	}
 
-	public class Parenthesized : Primary
+	public sealed class Parenthesized : Unary
 	{
 		public Parenthesized(Expression expression)
 		{
-			Left = expression;
+			Expression = expression;
 		}
 
-		public override Expression Left { get; }
+		public override Expression Expression { get; }
+		public override long Value => Expression.Value;
 
-		public override long Value => Left.Value;
-
-		protected override string ToJson(string opCode, bool skipEmpty, uint level)
-		{
-			string tabs = "";
-			for (int i = 0; i < level; i++)
-				tabs += "    ";
-
-			string type = "    \"type\": \"" + this.GetType().Name + "\"";
-			string expression = Left?.ToJson(skipEmpty, level + 1);
-			string value = this.Value.ToString();
-
-			expression   = (expression == null ? "" : ",\n" + tabs + "    \"expression\": " + expression);
-			value = ",\n" + tabs + "    \"value\": " + value;
-
-			return "{\n"+tabs+type+expression+value+"\n"+tabs+"}";
-		}
-
-		public override string ToJson(bool skipEmpty = false, uint level = 0)
-			=> this.ToJson(null, skipEmpty, level);
-
-		public override string ToString() => $"({Left})";
+		public override string ToString() => $"({Expression})";
 	}
 }
