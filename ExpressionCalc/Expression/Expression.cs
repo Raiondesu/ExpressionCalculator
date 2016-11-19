@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel;
-using System.Linq;
 
 namespace ExpressionCalc
 {
 	public abstract class Expression
 	{
-		public abstract long Value { get; }
+		public abstract double Value { get; }
 
 		public abstract string ToJson(bool skipEmpty = false, uint level = 0);
 	}
@@ -48,7 +47,7 @@ namespace ExpressionCalc
 			return "{\n"+tabs+type+left+opCode+right+value+"\n"+tabs+"}";
 		}
 
-		public new virtual string ToString() => Left + (OpCode ?? "") + (Right?.ToString() ?? "");
+		public override string ToString() => Left + (OpCode ?? "") + (Right?.ToString() ?? "");
 	}
 
 	public class Logical : Binary
@@ -74,7 +73,7 @@ namespace ExpressionCalc
 		private OpCodeType? OperationCode { get; }
 		public override string OpCode => OperationCode?.Description();
 
-		public override long Value
+		public override double Value
 		{
 			get
 			{
@@ -119,22 +118,22 @@ namespace ExpressionCalc
 		private OpCodeType? OperationCode { get; }
 		public override string OpCode => OperationCode?.Description();
 
-		public override long Value
+		public override double Value
 		{
 			get
 			{
 				switch (OperationCode)
 				{
 						case OpCodeType.band:
-							return Left.Value & (Right?.Value ?? 1);
+							return (int) Left.Value & (int) (Right?.Value ?? 1);
 						case OpCodeType.bor:
-							return Left.Value | (Right?.Value ?? 0);
+							return (int) Left.Value | (int) (Right?.Value ?? 0);
 						case OpCodeType.bxor:
-							return Left.Value ^ (Right?.Value ?? 0);
+							return (int) Left.Value ^ (int) (Right?.Value ?? 0);
 						case OpCodeType.bshiftl:
-							return Left.Value << (int)(Right?.Value ?? 0);
+							return (int) Left.Value << (int)(Right?.Value ?? 0);
 						case OpCodeType.bshiftr:
-							return Left.Value >> (int)(Right?.Value ?? 0);
+							return (int) Left.Value >> (int)(Right?.Value ?? 0);
 					default:
 							return Left.Value;
 				}
@@ -171,7 +170,7 @@ namespace ExpressionCalc
 		private OpCodeType? OperationCode { get; }
 		public override string OpCode => OperationCode?.Description();
 
-		public override long Value
+		public override double Value
 		{
 			get
 			{
@@ -217,7 +216,7 @@ namespace ExpressionCalc
 		private OpCodeType? OperationCode { get; }
 		public override string OpCode => OperationCode?.Description();
 
-		public override long Value
+		public override double Value
 		{
 			get
 			{
@@ -257,7 +256,7 @@ namespace ExpressionCalc
 		private OpCodeType? OperationCode { get; }
 		public override string OpCode => OperationCode?.Description();
 
-		public override long Value
+		public override double Value
 		{
 			get
 			{
@@ -299,17 +298,17 @@ namespace ExpressionCalc
 
 	public sealed class Integer : Primary
 	{
-		public Integer(long value)
+		public Integer(double value)
 		{
 			this.Value = value;
 		}
 
-		public override long Value { get; }
+		public override double Value { get; }
 
 		public static bool CheckBounds(string input)
 		{
-			long res;
-			if (long.TryParse(input, out res)) return true;
+			double res;
+			if (double.TryParse(input, out res)) return true;
 			if (System.Text.RegularExpressions.Regex.IsMatch(input, "^-?[0-9]+$"))
 				throw new CalculationException(input, typeof(Integer), "Number is out of bounds!");
 			return false;
@@ -328,7 +327,7 @@ namespace ExpressionCalc
 		}
 
 		public override Expression Expression { get; }
-		public override long Value => Expression.Value;
+		public override double Value => Expression.Value;
 
 		public override string ToString() => $"({Expression})";
 	}
