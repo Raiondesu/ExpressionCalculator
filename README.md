@@ -13,7 +13,7 @@ try
 {
 	Expression expression = input.Parse();
 }
-catch (Exception e)
+catch (ParseException e)
 {
 	Console.WriteLine(e);
 }
