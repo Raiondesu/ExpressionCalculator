@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
@@ -41,10 +40,13 @@ namespace ExpressionCalc
 		public static string GetLast(this string source, int tailLength = 5)
 			=> tailLength >= source.Length ? source : source.Substring(source.Length - tailLength);
 
-		public static IEnumerable<Type> GetAllSubclasses(this Type parent)
-			=> from a in AppDomain.CurrentDomain.GetAssemblies()
+		public static string GetLast(this object source, int tailLength = 5)
+			=> source.ToString().GetLast(tailLength);
+
+		public static Type[] GetAllSubclasses(this Type parent)
+			=> (from a in AppDomain.CurrentDomain.GetAssemblies()
 				from t in a.GetTypes()
 				where t.IsSubclassOf(parent)
-				select t;
+				select t).ToArray();
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Linq;
 
 namespace ExpressionCalc
 {
@@ -87,6 +88,55 @@ namespace ExpressionCalc
 						return (Left.Value > 0) ^ ((Right?.Value ?? 1) > 0) ? 1 : 0;
 					default:
 						return Left.Value;
+				}
+			}
+		}
+	}
+
+	public class Bitwise : Binary
+	{
+		public Bitwise(Expression left, string opCode = null, Expression right = null) : base(left, right)
+		{
+			OperationCode = opCode?.ToEnum<OpCodeType>();
+		}
+
+		public new enum OpCodeType
+		{
+			[Description("&")]
+			band,
+			[Description("|")]
+			bor,
+			[Description("^")]
+			bxor,
+			[Description("<<")]
+			bshiftl,
+			[Description(">>")]
+			bshiftr
+		}
+
+		public new static string[] AllOpCodes => default(OpCodeType).GetDescriptions();
+
+		private OpCodeType? OperationCode { get; }
+		public override string OpCode => OperationCode?.Description();
+
+		public override long Value
+		{
+			get
+			{
+				switch (OperationCode)
+				{
+						case OpCodeType.band:
+							return Left.Value & (Right?.Value ?? 1);
+						case OpCodeType.bor:
+							return Left.Value | (Right?.Value ?? 0);
+						case OpCodeType.bxor:
+							return Left.Value ^ (Right?.Value ?? 0);
+						case OpCodeType.bshiftl:
+							return Left.Value << (int)(Right?.Value ?? 0);
+						case OpCodeType.bshiftr:
+							return Left.Value >> (int)(Right?.Value ?? 0);
+					default:
+							return Left.Value;
 				}
 			}
 		}
@@ -215,7 +265,7 @@ namespace ExpressionCalc
 				{
 					case OpCodeType.Division:
 						if (Right?.Value == 0)
-							throw new CalculationException(Left.ToString().GetLast() + "/" + Right, this.GetType(), "Division by 0!");
+							throw new CalculationException(Left.GetLast() + "/" + Right, this.GetType(), "Division by 0!");
 						return Left.Value / (Right?.Value ?? 1);
 					case OpCodeType.Product:
 						return Left.Value * (Right?.Value ?? 1);
@@ -226,7 +276,7 @@ namespace ExpressionCalc
 		}
 	}
 
-	public abstract class Unary : Expression
+	public abstract class Primary : Expression
 	{
 		public abstract Expression Expression { get; }
 
@@ -245,11 +295,9 @@ namespace ExpressionCalc
 
 			return "{\n"+tabs+type+expression+value+"\n"+tabs+"}";
 		}
-
-		public new virtual string ToString() => this.Expression.ToString();
 	}
 
-	public sealed class Integer : Unary
+	public sealed class Integer : Primary
 	{
 		public Integer(long value)
 		{
@@ -267,11 +315,12 @@ namespace ExpressionCalc
 			return false;
 		}
 
-		public override Expression Expression { get; }
+		public override Expression Expression => null;
+
 		public override string ToString() => Value.ToString();
 	}
 
-	public sealed class Parenthesized : Unary
+	public sealed class Parenthesized : Primary
 	{
 		public Parenthesized(Expression expression)
 		{
