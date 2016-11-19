@@ -48,7 +48,7 @@ namespace ExpressionCalc
 			return "{\n"+tabs+type+left+opCode+right+value+"\n"+tabs+"}";
 		}
 
-		public new virtual string ToString() => Left + (OpCode ?? "") + (Right?.ToString() ?? "");
+		public override string ToString() => Left + (OpCode ?? "") + (Right?.ToString() ?? "");
 	}
 
 	public class Logical : Binary
